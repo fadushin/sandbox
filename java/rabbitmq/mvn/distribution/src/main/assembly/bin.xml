@@ -38,6 +38,13 @@
             <outputDirectory>rabbitmq-distribution</outputDirectory>
             <includes>
                 <include>bin/*</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/release</directory>
+            <outputDirectory>rabbitmq-distribution</outputDirectory>
+            <includes>
                 <include>lib/*</include>
             </includes>
         </fileSet>

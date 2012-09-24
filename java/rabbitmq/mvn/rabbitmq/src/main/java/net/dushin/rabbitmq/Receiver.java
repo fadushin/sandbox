@@ -52,6 +52,11 @@ public class Receiver extends RabbitMQClient implements Iterable<byte[]> {
         channel.queueDeclare(queueName, isDurable, false, false, null);
         this.iterator = new MessageIterator(queueName, channel);
     }
+    
+    public void stop() throws IOException {
+        channel.close();
+        connection.close();
+    }
 
     @Override
     public Iterator<byte[]> iterator() {
@@ -101,51 +106,54 @@ public class Receiver extends RabbitMQClient implements Iterable<byte[]> {
     
     public static void main(final String[] argv) throws IOException {
         String hostname = "localhost";
-        String queuename = "test";
-        Integer numConnections = 1;
+        String queueName = "test";
+        Integer numReceive = 1;
+        Boolean durable = Boolean.FALSE;
         for (int i = 0;  i < argv.length;) {
             final String arg = argv[i];
             if (arg.equals("--hostname")) {
                 hostname = nextString(argv, ++i);
                 ++i;
             }
-            if (arg.equals("--queuename")) {
-                queuename = nextString(argv, ++i);
+            if (arg.equals("--queueName")) {
+                queueName = nextString(argv, ++i);
                 ++i;
             }
-            if (arg.equals("--connections")) {
-                numConnections = nextInt(argv, ++i);
+            if (arg.equals("--numReceive")) {
+            	numReceive = nextInt(argv, ++i);
+                ++i;
+            }
+            if (arg.equals("--durable")) {
+            	durable = Boolean.TRUE;
                 ++i;
             }
             if (arg.equals("--help")) {
                 System.out.println(
                     "Syntax: " + Sender.class.getName() + '\n'
                     + "\t--hostname <string> (default: \"localhost\")\n"
-                    + "\t--queuename <string> (default: \"test\")\n"
-                    + "\t--connections <int> (default: 1)\n"
+                    + "\t--queueName <string> (default: \"test\")\n"
+                    + "\t--numReceive <int> (default: 1)\n"
+                    + "\t--durable (default: FALSE)\n"
                 );
                 System.exit(0);
             }
         }
-
-        for (int i = 0;  i < numConnections;  ++i) {
-            final Receiver receiver = new Receiver(hostname, queuename, false);
-            new Thread(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            long numReceived = 0;
-                            long bytesReceived = 0L;
-                            for (final byte[] data : receiver) {
-                                numReceived++;
-                                bytesReceived += data.length;
-                                if (numReceived % 10000 == 0) {
-                                    System.out.print('.');
-                                }
-                            }               
-                        }
-                    }
-            ).start();
+        final int expect = numReceive;
+        final Receiver receiver = new Receiver(hostname, queueName, durable);
+        long numReceived = 0;
+        long bytesReceived = 0L;
+        for (final byte[] data : receiver) {
+            numReceived++;
+            bytesReceived += data.length;
+            if (numReceived % 10000 == 0) {
+                System.out.print('.');
+            }
+            if (numReceived >= expect) {
+            	System.out.println();
+            	System.out.println("Received " + numReceived + " message(s) in " + bytesReceived + " byte(s).");
+            	break;
+            }
         }
+        receiver.stop();
     }
 }
