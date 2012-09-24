@@ -117,6 +117,15 @@ public class Receiver extends RabbitMQClient implements Iterable<byte[]> {
                 numConnections = nextInt(argv, ++i);
                 ++i;
             }
+            if (arg.equals("--help")) {
+                System.out.println(
+                    "Syntax: " + Sender.class.getName() + '\n'
+                    + "\t--hostname <string> (default: \"localhost\")\n"
+                    + "\t--queuename <string> (default: \"test\")\n"
+                    + "\t--connections <int> (default: 1)\n"
+                );
+                System.exit(0);
+            }
         }
 
         for (int i = 0;  i < numConnections;  ++i) {

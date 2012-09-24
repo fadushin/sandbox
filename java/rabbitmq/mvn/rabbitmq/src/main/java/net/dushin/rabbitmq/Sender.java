@@ -93,6 +93,17 @@ public class Sender extends RabbitMQClient
                 max = nextInt(argv, ++i);
                 ++i;
             }
+            if (arg.equals("--help")) {
+                System.out.println(
+                    "Syntax: " + Sender.class.getName() + '\n'
+                    + "\t--hostname <string> (default: \"localhost\")\n"
+                    + "\t--queuename <string> (default: \"test\")\n"
+                    + "\t--connections <int> (default: 1)\n"
+                    + "\t--min <int> (default: 512)\n"
+                    + "\t--max <int> (default: 1024)\n"
+                );
+                System.exit(0);
+            }
         }
         if (max <= min) {
             throw new RuntimeException("min must be strictly less than max");
@@ -105,19 +116,19 @@ public class Sender extends RabbitMQClient
         for (int i = 0;  i < numConnections;  ++i) {
             final Sender sender = new Sender(hostname, queuename, false);
             new Thread(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            while (true) {
-                                final byte[] data = DATA[generator.nextInt(delta)];
-                                try {
-                                    sender.send(data);
-                                } catch (IOException e) {
-                                    e.printStackTrace(); 
-                                }
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        while (true) {
+                            final byte[] data = DATA[generator.nextInt(delta)];
+                            try {
+                                sender.send(data);
+                            } catch (IOException e) {
+                                e.printStackTrace(); 
                             }
                         }
                     }
+                }
             ).start();
         }
         
