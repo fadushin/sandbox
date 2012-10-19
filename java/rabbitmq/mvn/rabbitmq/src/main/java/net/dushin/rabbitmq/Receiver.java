@@ -103,54 +103,70 @@ public class Receiver extends RabbitMQClient implements Iterable<byte[]> {
         
     }
     
+    private static void help() {
+        System.out.println(
+                "Syntax: " + Sender.class.getName() + '\n'
+                + "\t--hostname <string> (default: \"localhost\")\n"
+                + "\t--queueName <string> (default: \"test\")\n"
+                + "\t--numMessages <int> (default: 1)\n"
+                + "\t--durable (default: FALSE)\n"
+            );
+    }
     
     public static void main(final String[] argv) throws IOException {
         String hostname = "localhost";
         String queueName = "test";
-        Integer numReceive = 1;
+        Integer numMessages = 1;
         Boolean durable = Boolean.FALSE;
+        Boolean verbose = Boolean.FALSE;
         for (int i = 0;  i < argv.length;) {
             final String arg = argv[i];
             if (arg.equals("--hostname")) {
                 hostname = nextString(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--queueName")) {
+            } else if (arg.equals("--queueName")) {
                 queueName = nextString(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--numReceive")) {
-            	numReceive = nextInt(argv, ++i);
+            } else if (arg.equals("--numMessages")) {
+            	numMessages = nextInt(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--durable")) {
+            } else if (arg.equals("--durable")) {
             	durable = Boolean.TRUE;
                 ++i;
-            }
-            if (arg.equals("--help")) {
-                System.out.println(
-                    "Syntax: " + Sender.class.getName() + '\n'
-                    + "\t--hostname <string> (default: \"localhost\")\n"
-                    + "\t--queueName <string> (default: \"test\")\n"
-                    + "\t--numReceive <int> (default: 1)\n"
-                    + "\t--durable (default: FALSE)\n"
-                );
+            } else if (arg.equals("--verbose")) {
+            	verbose = Boolean.TRUE;
+                ++i;
+            } else if (arg.equals("--help")) {
+            	help();
                 System.exit(0);
+            } else {
+            	help();
+                System.exit(1);
             }
+            
         }
-        final int expect = numReceive;
+        final int expect = numMessages;
         final Receiver receiver = new Receiver(hostname, queueName, durable);
         long numReceived = 0;
         long bytesReceived = 0L;
+        if (verbose) {
+        	System.out.println("Waiting for " + expect + " message(s)...");
+        }
         for (final byte[] data : receiver) {
             numReceived++;
             bytesReceived += data.length;
-            if (numReceived % 10000 == 0) {
-                System.out.print('.');
+            if (verbose) {
+            	if (numReceived % 10000 == 0) {
+            		if (verbose) {
+            			System.out.print('.');
+            		}
+                }
             }
             if (numReceived >= expect) {
-            	System.out.println();
-            	System.out.println("Received " + numReceived + " message(s) in " + bytesReceived + " byte(s).");
+            	if (verbose) {
+                	System.out.println();
+                	System.out.println("Received " + numReceived + " message(s) in " + bytesReceived + " byte(s).");
+            	}
             	break;
             }
         }

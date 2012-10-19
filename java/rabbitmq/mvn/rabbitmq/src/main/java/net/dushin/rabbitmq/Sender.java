@@ -70,83 +70,85 @@ public class Sender extends RabbitMQClient
 
     private static byte[][] DATA;
     
+    private static void help() {
+        System.out.println(
+                "Syntax: " + Sender.class.getName() + '\n'
+                + "\t--hostname <string> (default: \"localhost\")\n"
+                + "\t--exchangeName <string> (default: \"\")\n"
+                + "\t--queueName <string> (default: \"test\")\n"
+                + "\t--numMessages <int> (default: 1)\n"
+                + "\t--messageSize <int> (default: 1024)\n"
+                + "\t--durable (default: FALSE)\n"
+            );
+    }
+
     public static void main(final String[] argv) throws IOException {
         generator.setSeed(System.currentTimeMillis());
         String hostname = "localhost";
         String exchangeName = "";
         String queueName = "test";
-        Integer numPublish = 1;
-        Integer min = 512;
-        Integer max = 1024;
+        Integer numMessages = 1;
+        Integer messageSize = 1024;
         Boolean persistent = Boolean.FALSE;
+        Boolean verbose = Boolean.FALSE;
         for (int i = 0;  i < argv.length;) {
             final String arg = argv[i];
             if (arg.equals("--hostname")) {
                 hostname = nextString(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--exchangeName")) {
+            } else if (arg.equals("--exchangeName")) {
             	exchangeName = nextString(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--queueName")) {
+            } else if (arg.equals("--queueName")) {
             	queueName = nextString(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--numPublish")) {
-            	numPublish = nextInt(argv, ++i);
+            } else if (arg.equals("--numMessages")) {
+            	numMessages = nextInt(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--min")) {
-                min = nextInt(argv, ++i);
+            } else if (arg.equals("--messageSize")) {
+            	messageSize = nextInt(argv, ++i);
                 ++i;
-            }
-            if (arg.equals("--max")) {
-                max = nextInt(argv, ++i);
-                ++i;
-            }
-            if (arg.equals("--persistent")) {
+            } else if (arg.equals("--durable")) {
             	persistent = Boolean.TRUE;
                 ++i;
-            }
-            if (arg.equals("--help")) {
-                System.out.println(
-                    "Syntax: " + Sender.class.getName() + '\n'
-                    + "\t--hostname <string> (default: \"localhost\")\n"
-                    + "\t--exchangeName <string> (default: \"\")\n"
-                    + "\t--queueName <string> (default: \"test\")\n"
-                    + "\t--numPublish <int> (default: 1)\n"
-                    + "\t--min <int> (default: 512)\n"
-                    + "\t--max <int> (default: 1024)\n"
-                    + "\t--durable (default: FALSE)\n"
-                );
+            } else if (arg.equals("--verbose")) {
+            	verbose = Boolean.TRUE;
+                ++i;
+            } else if (arg.equals("--help")) {
+            	help();
                 System.exit(0);
+            } else {
+            	help();
+                System.exit(1);
             }
         }
-        if (max <= min) {
-            throw new RuntimeException("min must be strictly less than max");
+        final byte[] data = randomData(messageSize);
+        if (verbose) {
+            System.out.println("Sending " + numMessages + " message(s)...");
         }
-        final int delta = max - min;
-        DATA = new byte[delta][];
-        for (int i = 0;  i < delta;  ++i) {
-            DATA[i] = randomData(min, max);
-        }
-        final int n = numPublish;
+     	int sent = 0;
         final Sender sender = new Sender(hostname, exchangeName, queueName, persistent);
-        for (int i = 0;  i < n;  ++i) {
-            final byte[] data = DATA[generator.nextInt(delta)];
+        for (int i = 0;  i < numMessages;  ++i) {
             try {
                 sender.send(data);
             } catch (IOException e) {
                 e.printStackTrace(); 
             }
+            ++sent;
+            if (verbose) {
+            	if (sent % 10000 == 0) {
+            		System.out.print('.');
+            	}
+            }
         }
-        System.out.println("Sent " + numPublish + " message(s).");
+        if (verbose) {
+        	System.out.println("Sent " + numMessages + " message(s).");
+        }
         sender.stop();
     }
 
-    private static byte[] randomData(Integer min, Integer max) {
-        final byte[] bytes = new byte[min + generator.nextInt(max - min)];
+    private static byte[] randomData(Integer messageSize) {
+        final byte[] bytes = new byte[messageSize];
         generator.nextBytes(bytes);
         return bytes;
     }
