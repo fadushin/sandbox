@@ -30,6 +30,10 @@ project(rabbitmq)
 
 find_package(Boost COMPONENTS system program_options chrono REQUIRED) 
 
+if (APPLE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+endif()
 
 
 set(

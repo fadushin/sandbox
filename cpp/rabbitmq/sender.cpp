@@ -112,10 +112,10 @@ int main(int argc, char** argv)
             << "; exchange_name = " << exchange_name
             << "; routing_key = " << routing_key
         );
-        const std::string msg(random_data(message_size));
+		auto envelope = BasicMessage::Create(random_data(message_size));
         for (unsigned i = 0;  i < num_messages;  ++i)
         {
-            channel->BasicPublish(exchange_name, routing_key, BasicMessage::Create(msg));
+            channel->BasicPublish(exchange_name, routing_key, envelope);
         }
     }
     catch (const std::exception& e)
